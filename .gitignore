@@ -1,0 +1,48 @@
+# ── Build products ────────────────────────────────────────────────────────────
+.build/
+.swiftpm/
+DerivedData/
+build/
+xcuserdata/
+
+# ── Model artifacts — never committed ─────────────────────────────────────────
+# Weights and compiled model packages are fetched or generated, and identified by
+# models/<id>/manifest.json, which IS committed.
+*.mlpackage
+*.mlmodel
+*.mlmodelc
+*.pth
+*.pt
+*.onnx
+models/*/weights/
+models/*/output/
+models/*/certification/
+# Conversion by-products: the synthetic test tile, the oracle/Core ML views of it, and the run report.
+models/*/conversion/*.png
+models/*/conversion/report*.txt
+models/*/manifest.candidate.json
+
+# ── Certification corpus and reference outputs — local only ───────────────────
+# git cannot re-include a file whose parent directory is excluded, so the directories
+# themselves are not the ignored entries; their READMEs stay tracked.
+**/TestFixtures/corpus/*
+!**/TestFixtures/corpus/README.md
+**/TestFixtures/references/**/*.npy
+**/TestFixtures/references/**/*.png
+
+# ── Generated fixtures (tools/fixtures/make_fixtures.py) ──────────────────────
+**/TestFixtures/workloads/*.jpg
+
+# ── Device harness drop-in artifacts — local only ─────────────────────────────
+DeviceHarnessApp/HarnessArtifacts/*
+!DeviceHarnessApp/HarnessArtifacts/PLACEHOLDER.md
+
+# ── Python ────────────────────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
