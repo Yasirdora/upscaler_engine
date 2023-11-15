@@ -9,7 +9,9 @@ import PackageDescription
 // it). The deterministic enforcement point is the import check in .github/workflows/ci.yml — keep
 // the two in sync when adding a target.
 //
-//   UpscaleCore, ImagePipeline -> no internal dependencies.
+//   UpscaleCore, ImagePipeline, Benchmarking, TestFixtures -> no internal dependencies.
+//     (In particular UpscaleCore may NOT import ImagePipeline or ModelStore.)
+//   ModelStore    -> may depend on UpscaleCore.
 let package = Package(
     name: "Upscaler",
     platforms: [
@@ -19,6 +21,9 @@ let package = Package(
     products: [
         .library(name: "UpscaleCore", targets: ["UpscaleCore"]),
         .library(name: "ImagePipeline", targets: ["ImagePipeline"]),
+        .library(name: "ModelStore", targets: ["ModelStore"]),
+        .library(name: "Benchmarking", targets: ["Benchmarking"]),
+        .library(name: "TestFixtures", targets: ["TestFixtures"]),
     ],
     dependencies: [
         // No third-party dependencies, by design.
@@ -26,8 +31,21 @@ let package = Package(
     targets: [
         .target(name: "UpscaleCore"),
         .target(name: "ImagePipeline"),
+        // Depends on UpscaleCore: `ModelProviding` traffics in `ModelDescriptor`.
+        .target(name: "ModelStore", dependencies: ["UpscaleCore"]),
+        .target(name: "Benchmarking"),
+        // corpus/, references/ and workloads/ hold certification data (images, .npy tensors, the
+        // committed references_manifest.json) — not Swift sources. Excluded so SwiftPM does not
+        // reject them as unhandled files.
+        .target(
+            name: "TestFixtures",
+            exclude: ["corpus", "references", "references_manifest.json", "workloads"]
+        ),
         .testTarget(name: "UpscaleCoreTests", dependencies: ["UpscaleCore"]),
         .testTarget(name: "ImagePipelineTests", dependencies: ["ImagePipeline"]),
+        .testTarget(name: "ModelStoreTests", dependencies: ["ModelStore"]),
+        .testTarget(name: "BenchmarkingTests", dependencies: ["Benchmarking"]),
+        .testTarget(name: "TestFixturesTests", dependencies: ["TestFixtures"]),
     ],
     swiftLanguageModes: [.v6]
 )
