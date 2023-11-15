@@ -9,7 +9,7 @@ import PackageDescription
 // it). The deterministic enforcement point is the import check in .github/workflows/ci.yml — keep
 // the two in sync when adding a target.
 //
-//   UpscaleCore -> no internal dependencies.
+//   UpscaleCore, ImagePipeline -> no internal dependencies.
 let package = Package(
     name: "Upscaler",
     platforms: [
@@ -18,13 +18,16 @@ let package = Package(
     ],
     products: [
         .library(name: "UpscaleCore", targets: ["UpscaleCore"]),
+        .library(name: "ImagePipeline", targets: ["ImagePipeline"]),
     ],
     dependencies: [
         // No third-party dependencies, by design.
     ],
     targets: [
         .target(name: "UpscaleCore"),
+        .target(name: "ImagePipeline"),
         .testTarget(name: "UpscaleCoreTests", dependencies: ["UpscaleCore"]),
+        .testTarget(name: "ImagePipelineTests", dependencies: ["ImagePipeline"]),
     ],
     swiftLanguageModes: [.v6]
 )
