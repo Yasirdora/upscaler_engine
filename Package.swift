@@ -12,6 +12,7 @@ import PackageDescription
 //   UpscaleCore, ImagePipeline, Benchmarking, TestFixtures -> no internal dependencies.
 //     (In particular UpscaleCore may NOT import ImagePipeline or ModelStore.)
 //   ModelStore    -> may depend on UpscaleCore.
+//   UpscaleCLI    -> may depend on all of the above.
 let package = Package(
     name: "Upscaler",
     platforms: [
@@ -24,6 +25,7 @@ let package = Package(
         .library(name: "ModelStore", targets: ["ModelStore"]),
         .library(name: "Benchmarking", targets: ["Benchmarking"]),
         .library(name: "TestFixtures", targets: ["TestFixtures"]),
+        .executable(name: "UpscaleCLI", targets: ["UpscaleCLI"]),
     ],
     dependencies: [
         // No third-party dependencies, by design.
@@ -41,11 +43,22 @@ let package = Package(
             name: "TestFixtures",
             exclude: ["corpus", "references", "references_manifest.json", "workloads"]
         ),
+        .executableTarget(
+            name: "UpscaleCLI",
+            dependencies: [
+                "UpscaleCore",
+                "ImagePipeline",
+                "ModelStore",
+                "Benchmarking",
+                "TestFixtures",
+            ]
+        ),
         .testTarget(name: "UpscaleCoreTests", dependencies: ["UpscaleCore"]),
         .testTarget(name: "ImagePipelineTests", dependencies: ["ImagePipeline"]),
         .testTarget(name: "ModelStoreTests", dependencies: ["ModelStore"]),
         .testTarget(name: "BenchmarkingTests", dependencies: ["Benchmarking"]),
         .testTarget(name: "TestFixturesTests", dependencies: ["TestFixtures"]),
+        .testTarget(name: "UpscaleCLITests", dependencies: ["UpscaleCLI"]),
     ],
     swiftLanguageModes: [.v6]
 )
