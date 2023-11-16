@@ -1,0 +1,34 @@
+model_id: RealESRGAN_x4plus
+scale_factor: 4
+architecture:
+  type: RRDBNet
+  num_in_ch: 3
+  num_out_ch: 3
+  num_feat: 64
+  num_block: 23
+  num_grow_ch: 32
+source:
+  repo: https://github.com/xinntao/Real-ESRGAN
+  commit_or_release: v0.1.0
+  license: BSD-3-Clause
+weights:
+  url: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
+  sha256: 4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1
+  path: models/RealESRGAN_x4plus/weights/RealESRGAN_x4plus.pth
+  state_dict_key: params_ema
+conversion:
+  representation: mlprogram
+  precision: float16
+  input_shape:
+  - 1
+  - 3
+  - 256
+  - 256
+  min_deployment: macOS14
+  compute_units: ALL
+  seed: 0
+preprocessing: RGB float [0,1], NCHW
+postprocessing: clamp [0,1]
+test_tile: models/RealESRGAN_x4plus/conversion/input_tile.png
+thresholds:
+  psnr_db: 38.0

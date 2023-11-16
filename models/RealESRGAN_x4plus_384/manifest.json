@@ -1,0 +1,54 @@
+{
+  "model_id": "RealESRGAN_x4plus_384",
+  "scale_factor": 4,
+  "weights": {
+    "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+    "sha256": "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1",
+    "bytes": 67040989,
+    "state_dict_key": "params_ema",
+    "parameters": 16697987
+  },
+  "source": {
+    "repo": "https://github.com/xinntao/Real-ESRGAN",
+    "commit_or_release": "v0.1.0",
+    "license": "BSD-3-Clause"
+  },
+  "conversion": {
+    "script": "tools/convert/convert.py",
+    "script_version": "1.0.0",
+    "coremltools": "8.3.0",
+    "torch": "2.5.0",
+    "python": "3.12.14",
+    "representation": "mlprogram",
+    "precision": "float16",
+    "input_shape": [
+      1,
+      3,
+      384,
+      384
+    ],
+    "output_shape": [
+      1,
+      3,
+      1536,
+      1536
+    ],
+    "min_deployment": "macOS14",
+    "compute_units": "ALL",
+    "parameters": {
+      "tracer": "torch.jit.trace",
+      "seed": 0
+    }
+  },
+  "preprocessing": "RGB float [0,1], NCHW",
+  "postprocessing": "clamp [0,1]",
+  "outputs": {
+    "mlpackage_sha256": "29578bf0596beae58b82679e3ba900b0d3dace245b6c0325fed0fa931d4492f3",
+    "reference_metrics": {
+      "psnr_db": 62.88559360897071,
+      "mae": 0.00044877256111516345,
+      "max_abs": 0.024872422218322754
+    }
+  },
+  "created_utc": "2026-10-29T21:36:16+00:00"
+}

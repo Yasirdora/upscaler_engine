@@ -1,0 +1,32 @@
+# Conversion and certification tooling — pinned dependencies.
+#
+# Python: 3.12 is the supported interpreter line.
+#         The exact interpreter version is recorded in every manifest.json.
+# torch:  pinned to coremltools 8.3.0's most recent TESTED version (_TORCH_MAX_VERSION = 2.5.0);
+#         coremltools warns above it, and a certification baseline should not rest on an
+#         untested converter pairing.
+torch==2.5.0
+coremltools==8.3.0
+numpy==2.0.2
+pillow==11.3.0
+pyyaml==6.0.3
+
+# Test-only.
+pytest==8.4.2
+
+# Certification harness — offline evaluation tooling, never linked into the engine.
+# scikit-image: the *external* oracle the metric tests assert against. tools/certify/metrics.py
+#   implements PSNR/SSIM itself; the tests pin those implementations to scikit-image's numbers,
+#   so a silent change in behaviour cannot be ratified by the code that caused it. BSD-3-Clause.
+# lpips: the Level B perceptual metric (certification spec §4). BSD-2-Clause. Its AlexNet trunk
+#   weights are downloaded on first use and are evaluation-only — see THIRD_PARTY_NOTICES.md.
+scikit-image==0.25.2
+lpips==0.1.4
+
+# Transitive dependencies of the two above, pinned so a certification run is reproducible.
+# torchvision is lpips's trunk: 0.20.0 is the release paired with the pinned torch 2.5.0.
+torchvision==0.20.0
+scipy==1.18.0
+imageio==2.37.4
+tifffile==2026.4.11
+lazy-loader==0.5

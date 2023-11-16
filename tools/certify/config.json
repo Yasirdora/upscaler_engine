@@ -1,0 +1,25 @@
+{
+  "config_version": "1.0.0",
+  "note": "Thresholds live here, not inline in the harness. They come from docs/CERTIFICATION.md §4 and move only with evidence attached -- the ratchet rule expects them to tighten, never to loosen so a failing run passes.",
+  "thresholds": {
+    "level_a": {
+      "psnr_db_median_min": 38.0,
+      "max_abs_tolerance_255": 4.0,
+      "within_tolerance_fraction_min": 0.99,
+      "gated": true
+    },
+    "level_b": {
+      "ssim_median_min": 0.98,
+      "gated": false,
+      "note": "Certification spec §4 lists SSIM >= 0.98 as a Level B threshold; this harness gates on Level A only and records SSIM/LPIPS. The reference value is reported and compared; it does not decide status. LPIPS has no threshold by design -- a signal, never a verdict."
+    }
+  },
+  "tiles": {
+    "order_seed": 0,
+    "interior_stride": 128
+  },
+  "lpips": {
+    "net": "alex",
+    "device": "cpu"
+  }
+}
