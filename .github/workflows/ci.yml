@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift:
+    name: build · test · lint · boundaries
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build (warnings are errors)
+        run: swift build -Xswiftc -warnings-as-errors
+
+      - name: Test (warnings are errors)
+        run: swift test -Xswiftc -warnings-as-errors
+
+      - name: CLI runs and reports a version
+        run: swift run -q UpscaleCLI --version
+
+      - name: Example builds against the package
+        run: swift build --package-path Examples/UpscaleImage -Xswiftc -warnings-as-errors
+
+      - name: Lint (swift-format, strict — includes the no-force-unwrap rule)
+        run: |
+          swift format lint --recursive --strict --parallel \
+            Package.swift Sources Tests Examples/UpscaleImage/Package.swift Examples/UpscaleImage/Sources
+
+      # Package.swift declares the dependency edges, but SwiftPM does NOT reliably reject an
+      # undeclared intra-package import: with a warm module cache a violating import compiles and
+      # links with exit 0, and only a clean build rejects it. This check is the deterministic gate,
+      # independent of build state. Keep `allowed_for` in sync with Package.swift.
+      - name: Boundary — declared dependency edges and headless engine
+        run: |
+          set -u
+          modules="UpscaleCore ImagePipeline ModelStore Benchmarking TestFixtures DeviceHarness UpscaleCLI"
+          allowed_for() {
+            case "$1" in
+              ModelStore)    echo "UpscaleCore" ;;
+              DeviceHarness) echo "UpscaleCore Benchmarking TestFixtures" ;;
+              UpscaleCLI)    echo "UpscaleCore ImagePipeline ModelStore Benchmarking TestFixtures" ;;
+              *)             echo "" ;;
+            esac
+          }
+          status=0
+          for target in $modules; do
+            allowed=" $(allowed_for "$target") "
+            for imported in $modules; do
+              [ "$imported" = "$target" ] && continue
+              if grep -rqE "^[[:space:]]*(@[A-Za-z]+[[:space:]]+)?import[[:space:]]+${imported}([[:space:]]|$)" "Sources/$target"; then
+                case "$allowed" in
+                  *" $imported "*) ;;
+                  *) echo "::error::Sources/$target imports $imported, which is not a declared dependency"; status=1 ;;
+                esac
+              fi
+            done
+          done
+          for engine in UpscaleCore ImagePipeline ModelStore Benchmarking; do
+            if grep -rqE "^[[:space:]]*(@[A-Za-z]+[[:space:]]+)?import[[:space:]]+(SwiftUI|UIKit|AppKit)([[:space:]]|$)" "Sources/$engine"; then
+              echo "::error::Sources/$engine imports a UI framework — the engine must run headless"
+              status=1
+            fi
+          done
+          [ $status -eq 0 ] && echo "clean: import graph matches the declared dependency edges"
+          exit $status
+
+      - name: Artifact hygiene — ignore rules behave in both directions
+        run: |
+          for p in models/x/weights/fake.pth models/x/output/fake.mlpackage \
+                   models/x/conversion/input_tile.png Sources/TestFixtures/corpus/img.png \
+                   Sources/TestFixtures/workloads/B_12MP.jpg; do
+            git check-ignore -q "$p" || { echo "::error::$p must be ignored (.gitignore)"; exit 1; }
+          done
+          for p in models/x/manifest.json models/x/conversion/config.yaml \
+                   Sources/TestFixtures/corpus/README.md Sources/TestFixtures/references/README.md; do
+            if git check-ignore -q "$p"; then
+              echo "::error::$p must stay tracked"; exit 1
+            fi
+          done
+          echo "clean: artifact ignore rules verified"
+
+  python-tooling:
+    name: artifacts · manifests · python suites
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned test-only dependencies
+        # Versions match tools/convert/requirements.txt. torch, pillow and coremltools are
+        # deliberately absent: no suite imports them, and CI should not pull ~2 GB to run schema,
+        # artifact and oracle tests. A test asserts the heavy imports stay inside their functions.
+        run: python -m pip install pytest==8.4.2 numpy==2.0.2
+
+      - name: Artifact cache verification
+        # Green on a cold cache by design: weights are never committed, so a fresh runner has
+        # nothing to verify. This fails only when a *present* artifact disagrees with its manifest.
+        run: python tools/artifacts/fetch.py --verify-only --all
+
+      - name: Validate every manifest against the schema
+        run: |
+          shopt -s nullglob
+          manifests=(models/*/manifest.json)
+          if [ ${#manifests[@]} -eq 0 ]; then
+            echo "no manifests present — nothing to validate"
+            exit 0
+          fi
+          for m in "${manifests[@]}"; do
+            python -c "from tools.convert.manifest import validate; validate('$m')"
+            echo "valid: $m"
+          done
+
+      - name: Python suites
+        run: python -m pytest tools/ -q
