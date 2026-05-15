@@ -21,7 +21,11 @@ struct OutputSurfaceTests {
 
     /// A deterministic, position-dependent byte so a misplaced row or column cannot pass.
     static func pattern(x: Int, y: Int, channel: Int) -> UInt8 {
-        UInt8((x &* 7 &+ y &* 31 &+ channel &* 13) & 0xFF)
+        let termX: Int = x &* 7
+        let termY: Int = y &* 31
+        let termC: Int = channel &* 13
+        let sum: Int = (termX &+ termY &+ termC) & 0xFF
+        return UInt8(truncatingIfNeeded: sum)
     }
 
     /// Fill an absolute rect in a view with `pattern`.

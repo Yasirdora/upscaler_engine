@@ -16,6 +16,11 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("torch")
+pytest.importorskip("coremltools")
+pytest.importorskip("yaml")
+pytest.importorskip("PIL")
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import convert  # noqa: E402
